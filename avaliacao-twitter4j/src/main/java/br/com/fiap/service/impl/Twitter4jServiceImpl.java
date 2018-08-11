@@ -1,5 +1,6 @@
 package br.com.fiap.service.impl;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -8,35 +9,18 @@ import java.util.List;
 import java.util.Map;
 
 import br.com.fiap.service.Twitter4jService;
+import br.com.fiap.service.util.UpdateTweetUtil;
 import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
-import twitter4j.auth.AccessToken;
 
 public class Twitter4jServiceImpl implements Twitter4jService {
 
-	private  AccessToken loadAccessToken(){
-		String token = "1021551963580850177-zaqYQ674gUNGtEvwMf4TylpbcphJeR";
-		String tokenSecret = "WEqqNXJj6yp9UBkRbPVJrqvMutGhN6UR1jUdetBjD4vcV";
-		return new AccessToken(token, tokenSecret);
-	}
-
-	public Twitter twitterFactory() {
-
-		TwitterFactory factory = new TwitterFactory();
-		AccessToken accessToken = loadAccessToken();
-		Twitter twitter = factory.getSingleton();
-		twitter.setOAuthConsumer("uAz4fNbqHSg4wXd8nZopDtMUL", "LyJKg92TVskYJUyRWp7p1kpc74W6tXkbVqMm5OMQbmFs2bLkXT");
-		twitter.setOAuthAccessToken(accessToken);
-		return twitter;
-	}
-
 	@Override
 	public String buscarTweets(Twitter twitter) {
-		String response = "Quantidade por dia de tweets da Ãºltima semana: \ns";
+		String response = "Tweets: \n";
 		try {
 
 			LocalDate dataAtual = LocalDate.now();
@@ -60,22 +44,27 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 				//	            System.out.println(   "@"  + status.getUser().getScreenName() + " : " + status.getText() + " : " + status.getGeoLocation() + "date: " +
 				//	            		status.getCreatedAt());
 				//	            
+				
+				SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+				if (!quantidadeDatas.containsKey(fmt.format(status.getCreatedAt()).toString())) {
 
-				if (!quantidadeDatas.containsKey(status.getCreatedAt().toString())) {
-
-					quantidadeDatas.put(status.getCreatedAt().toString(), 1);
+					quantidadeDatas.put(fmt.format(status.getCreatedAt()).toString(), 1);
 				} else {
-					int value = quantidadeDatas.get(status.getCreatedAt().toString()).intValue();
+					int value = quantidadeDatas.get(fmt.format(status.getCreatedAt()).toString()).intValue();
 					value = value + 1;
-					quantidadeDatas.put(status.getCreatedAt().toString(), value);
+					quantidadeDatas.put(fmt.format(status.getCreatedAt()).toString(), value);
 
 				}
 			}
 
 			for(Map.Entry<String, Integer> entry : quantidadeDatas.entrySet()) {
-				response = response.concat("Data: " +entry.getKey() + " quantidade: " + entry.getValue() + "\n");
+				response = response.concat("Data: " +entry.getKey() + " Quant: " + entry.getValue() + "\n");
+				
 			}
-
+			
+			//Descomentar isso para mandar o tweet
+			//UpdateTweetUtil.enviarTweetsProfessor(twitter, response);
+			
 		} catch (TwitterException e) {
 			e.printStackTrace();
 		}
@@ -84,7 +73,7 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 
 	@Override
 	public String buscarRetweets(Twitter twitter) {
-		String response = "Quantidade de retweets: \n";
+		String response = "Retweets: \n";
 		try {
 			LocalDate dataAtual = LocalDate.now();
 			LocalDate dataBusca = dataAtual.minusDays(7l);
@@ -112,14 +101,15 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 						//			System.out.println(   "@"  + status.getRetweetedStatus().getUser().getScreenName() + " : " + status.getRetweetedStatus().getText() + " : " + status.getGeoLocation() + "date: " +
 						//					status.getRetweetedStatus().getCreatedAt());
 
+						
+						SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+						if (!quantidadeDatas.containsKey(fmt.format(status.getRetweetedStatus().getCreatedAt()).toString())) {
 
-						if (!quantidadeDatas.containsKey(status.getRetweetedStatus().getCreatedAt().toString())) {
-
-							quantidadeDatas.put(status.getRetweetedStatus().getCreatedAt().toString(), 1);
+							quantidadeDatas.put(fmt.format(status.getRetweetedStatus().getCreatedAt()).toString(), 1);
 						} else {
-							int value = quantidadeDatas.get(status.getRetweetedStatus().getCreatedAt().toString()).intValue();
+							int value = quantidadeDatas.get(fmt.format(status.getRetweetedStatus().getCreatedAt()).toString()).intValue();
 							value = value + 1;
-							quantidadeDatas.put(status.getRetweetedStatus().getCreatedAt().toString(), value);
+							quantidadeDatas.put(fmt.format(status.getRetweetedStatus().getCreatedAt()).toString(), value);
 
 						}
 					}
@@ -127,8 +117,10 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 			}
 
 			for(Map.Entry<String, Integer> entry : quantidadeDatas.entrySet()) {
-				response = response.concat("Data: " +entry.getKey() + " quantidade: " + entry.getValue() + "\n");
+				response = response.concat("Data: " +entry.getKey() + " Quant: " + entry.getValue() + "\n");
 			}
+			//Descomentar isso para mandar o tweet
+		//	UpdateTweetUtil.enviarTweetsProfessor(twitter, response);
 
 		} catch (TwitterException e) {
 			e.printStackTrace();
@@ -139,7 +131,7 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 	@Override
 	public String buscarTweetsNomeAutor(Twitter twitter) {
 		
-		String response = "Ordenar os tweets pelo nome do autor, e exibir o primeiro nome e o Ãºltimo nome.: \n";
+		String response = "Ordenar os tweets pelo nome do autor, e exibir o primeiro nome e o Último nome.: \n";
 		try {
 
 			LocalDate dataAtual = LocalDate.now();
@@ -154,6 +146,7 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 			QueryResult result = twitter.search(query);
 
 			List<Status> listaTweets = new ArrayList<>();
+			List<String> listaResponseSend = new ArrayList<>();
 			for (Status status : result.getTweets()) {
 
 				listaTweets.add(status);
@@ -162,12 +155,17 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 
 			listaTweets.sort((t1,t2) -> t1.getUser().getName().compareTo(t2.getUser().getName()));
 			
+			response = response + "Primeiro nome: " + listaTweets.get(0).getUser().getName() + "\n";
+			response = response + "Último nome: " + listaTweets.get(listaTweets.size()-1).getUser().getName() + "\n";
+			//Descomentar isso para mandar o tweet
+			//UpdateTweetUtil.enviarTweetsProfessor(twitter, response);
+			
 			for(Status status : listaTweets) {
 				response = response.concat("Author: " + status.getUser().getName() + " Tweet:" + status.getText() + "\n");
+				listaResponseSend.add("Author: " + status.getUser().getName() + " Tweet:" + status.getText() + "\n");
 			}
-
-			response = response + "Primeiro nome: " + listaTweets.get(0).getUser().getName() + "\n";
-			response = response + "Ãšltimo nome: " + listaTweets.get(listaTweets.size()-1).getUser().getName() + "\n";
+			//Descomentar isso para mandar o tweet
+			//UpdateTweetUtil.enviarTweetsProfessorComArray(twitter, listaResponseSend);
 
 		} catch (TwitterException e) {
 			e.printStackTrace();
@@ -193,6 +191,8 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 			QueryResult result = twitter.search(query);
 
 			List<Status> listaTweets = new ArrayList<>();
+			List<String> listaResponseSend = new ArrayList<>();
+			
 			for (Status status : result.getTweets()) {
 
 				listaTweets.add(status);
@@ -201,12 +201,18 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 			
 			listaTweets.sort((t1,t2) -> t1.getCreatedAt().compareTo(t2.getCreatedAt()));
 			
-			for(Status status : listaTweets) {
-				response = response + "Data: " + status.getCreatedAt()  + " Author: " + status.getUser().getName() + " Tweet:" + status.getText() + "\n";
-			}
-
 			response = response + "Data menos recente: " + listaTweets.get(0).getCreatedAt() + "\n";
 			response = response + "Data mais recente: " + listaTweets.get(listaTweets.size()-1).getCreatedAt() + "\n";
+			
+			//Descomentar isso para mandar o tweet
+			//UpdateTweetUtil.enviarTweetsProfessor(twitter, response);
+			
+			for(Status status : listaTweets) {
+				response = response + "Data: " + status.getCreatedAt()  + " Author: " + status.getUser().getName() + " Tweet:" + status.getText() + "\n";
+				listaResponseSend.add("Data: " + status.getCreatedAt()  + " Author: " + status.getUser().getName() + " Tweet:" + status.getText() + "\n");
+			}
+			//Descomentar isso para mandar o tweet
+			//UpdateTweetUtil.enviarTweetsProfessorComArray(twitter, listaResponseSend);
 
 		} catch (TwitterException e) {
 			e.printStackTrace();
@@ -217,7 +223,7 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 	@Override
 	public String buscarFavoritacoes(Twitter twitter) {
 		
-		String response = "Quantidade favoritacÃµes: \n";
+		String response = "Favoritações: \n";
 		try {
 			Map<String, Integer> quantidadeDatas = new HashMap<>();
 			for(int i = 7; i >= 0; i--) {
@@ -239,13 +245,14 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 						status.getCreatedAt().setSeconds(00);
 						
 						if (status.isFavorited()) {
-							if (!quantidadeDatas.containsKey(status.getCreatedAt().toString())) {
-
-								quantidadeDatas.put(status.getCreatedAt().toString(), 1);
+							SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+							if (!quantidadeDatas.containsKey(fmt.format(status.getCreatedAt()).toString())) {
+								quantidadeDatas.put(fmt.format(status.getCreatedAt()).toString(), 1);
+								
 							} else {
-								int value = quantidadeDatas.get(status.getCreatedAt().toString()).intValue();
+								int value = quantidadeDatas.get(fmt.format(status.getCreatedAt()).toString()).intValue();
 								value = value + 1;
-								quantidadeDatas.put(status.getCreatedAt().toString(), value);
+								quantidadeDatas.put(fmt.format(status.getCreatedAt().toString()), value);
 
 							}
 
@@ -258,8 +265,11 @@ public class Twitter4jServiceImpl implements Twitter4jService {
 			}
 
 			for(Map.Entry<String, Integer> entry : quantidadeDatas.entrySet()) {
-				response = response.concat("Data: " +entry.getKey() + " quantidade: " + entry.getValue() + "\n");
+				response = response.concat("Data: " +entry.getKey() + " Quant: " + entry.getValue() + "\n");
 			}
+			
+			//Descomentar isso para mandar o tweet
+			//UpdateTweetUtil.enviarTweetsProfessor(twitter, response);
 
 		} catch (TwitterException e) {
 			e.printStackTrace();
