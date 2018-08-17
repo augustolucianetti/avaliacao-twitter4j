@@ -1,5 +1,6 @@
 package br.com.fiap.main;
 
+import br.com.fiap.service.TwitterFactoryAcess;
 import br.com.fiap.service.impl.Twitter4jServiceImpl;
 import twitter4j.Twitter;
 
@@ -9,7 +10,8 @@ public class Main {
 
 		Twitter4jServiceImpl service = new Twitter4jServiceImpl();
 		String retorno = "";
-		Twitter twitter = service.twitterFactory();
+		TwitterFactoryAcess access = new TwitterFactoryAcess();
+		Twitter twitter = access.twitterFactory();
 		retorno = service.buscarTweets(twitter);
 		
 		retorno = retorno + "--------------------------------- \n";
